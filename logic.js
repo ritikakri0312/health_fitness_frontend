@@ -1,18 +1,82 @@
-document.getElementById("fitnessForm").addEventListener("submit", async function (e) {
+// -----------------------------
+// ELEMENT REFERENCES
+// -----------------------------
+const form = document.getElementById("fitnessForm");
+
+const ageInput = document.getElementById("age");
+const genderInput = document.getElementById("gender");
+const heightInput = document.getElementById("height");
+const weightInput = document.getElementById("weight");
+const goalSelect = document.getElementById("goal");
+
+const bmiBox = document.getElementById("bmiBox");
+const bmiText = document.getElementById("bmiText");
+const bmiSuggestion = document.getElementById("bmiSuggestion");
+
+const resultBox = document.getElementById("result");
+
+// -----------------------------
+// BMI CALCULATION + SMART GOAL
+// -----------------------------
+function updateBMIAndGoal() {
+    const height = Number(heightInput.value);
+    const weight = Number(weightInput.value);
+
+    if (!height || !weight) {
+        bmiBox.style.display = "none";
+        return;
+    }
+
+    const heightM = height / 100;
+    const bmi = (weight / (heightM * heightM)).toFixed(1);
+
+    let bmiCategory = "";
+    let suggestedGoal = "";
+
+    if (bmi < 18.5) {
+        bmiCategory = "Underweight";
+        suggestedGoal = "muscle gain";
+    } else if (bmi < 25) {
+        bmiCategory = "Normal";
+        suggestedGoal = "maintain";
+    } else {
+        bmiCategory = "Overweight";
+        suggestedGoal = "fat loss";
+    }
+
+    // Show BMI info
+    bmiBox.style.display = "block";
+    bmiText.innerHTML = `📊 BMI: <b>${bmi}</b> (${bmiCategory})`;
+    bmiSuggestion.innerHTML = `💡 Based on your BMI, we recommend: <b>${
+        suggestedGoal === "fat loss"
+            ? "Lose Weight"
+            : suggestedGoal === "muscle gain"
+            ? "Gain Muscle"
+            : "Maintain Health"
+    }</b>`;
+
+    // Auto-select goal (user can still override)
+    if (!goalSelect.value) {
+        goalSelect.value = suggestedGoal;
+    }
+}
+
+// Trigger BMI calculation while typing
+heightInput.addEventListener("input", updateBMIAndGoal);
+weightInput.addEventListener("input", updateBMIAndGoal);
+
+// -----------------------------
+// FORM SUBMIT
+// -----------------------------
+form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    // -----------------------------
-    // 1️⃣ READ FORM VALUES
-    // -----------------------------
-    const age = Number(document.getElementById("age").value);
-    const gender = document.getElementById("gender").value;
-    const height = Number(document.getElementById("height").value); // NEW
-    const weight = Number(document.getElementById("weight").value);
-    const goal = document.getElementById("goal").value;
+    const age = Number(ageInput.value);
+    const gender = genderInput.value;
+    const height = Number(heightInput.value);
+    const weight = Number(weightInput.value);
+    const goal = goalSelect.value;
 
-    // -----------------------------
-    // 2️⃣ BMI CALCULATION
-    // -----------------------------
     const heightM = height / 100;
     const bmi = (weight / (heightM * heightM)).toFixed(2);
 
@@ -22,25 +86,10 @@ document.getElementById("fitnessForm").addEventListener("submit", async function
     else if (bmi < 30) bmiCategory = "Overweight";
     else bmiCategory = "Obese";
 
-    // -----------------------------
-    // 3️⃣ SHOW BMI TO USER
-    // -----------------------------
-    const bmiBox = document.getElementById("bmiResult");
-    bmiBox.style.display = "block";
-    bmiBox.innerHTML = `
-        <h3>📊 Health Summary</h3>
-        <p><b>BMI:</b> ${bmi}</p>
-        <p><b>Category:</b> ${bmiCategory}</p>
-    `;
-
-    const resultBox = document.getElementById("result");
     resultBox.style.display = "block";
     resultBox.innerHTML = "<p>⏳ Generating AI recommendations...</p>";
 
     try {
-        // -----------------------------
-        // 4️⃣ SEND DATA TO BACKEND
-        // -----------------------------
         console.log("📤 Sending to backend:", {
             age,
             gender,
@@ -71,37 +120,22 @@ document.getElementById("fitnessForm").addEventListener("submit", async function
         );
 
         const data = await response.json();
-        console.log("📥 Response from backend:", data);
 
-        // -----------------------------
-        // 5️⃣ HANDLE BACKEND ERRORS
-        // -----------------------------
         if (!response.ok) {
             resultBox.innerHTML = `
                 <p style="color:red; font-weight:bold;">❌ API Error</p>
-                <pre style="background:#ffeeee; padding:12px; border-radius:8px;">
-${JSON.stringify(data, null, 2)}
-                </pre>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
             `;
             return;
         }
 
-        // -----------------------------
-        // 6️⃣ HANDLE AI RESPONSE
-        // -----------------------------
         const aiText = data.result || data.response;
 
         if (!aiText) {
-            resultBox.innerHTML = `
-                <p style="color:red;">❌ No AI result received.</p>
-                <p>Check backend logs on Render.</p>
-            `;
+            resultBox.innerHTML = `<p style="color:red;">❌ No AI result received.</p>`;
             return;
         }
 
-        // -----------------------------
-        // 7️⃣ FORMAT AI TEXT
-        // -----------------------------
         const formatted = aiText
             .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
             .replace(/[-•] /g, "👉 ")
