@@ -1,17 +1,55 @@
 document.getElementById("fitnessForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    const age = document.getElementById("age").value;
+    // -----------------------------
+    // 1️⃣ READ FORM VALUES
+    // -----------------------------
+    const age = Number(document.getElementById("age").value);
     const gender = document.getElementById("gender").value;
-    const weight = document.getElementById("weight").value;
+    const height = Number(document.getElementById("height").value); // NEW
+    const weight = Number(document.getElementById("weight").value);
     const goal = document.getElementById("goal").value;
+
+    // -----------------------------
+    // 2️⃣ BMI CALCULATION
+    // -----------------------------
+    const heightM = height / 100;
+    const bmi = (weight / (heightM * heightM)).toFixed(2);
+
+    let bmiCategory = "";
+    if (bmi < 18.5) bmiCategory = "Underweight";
+    else if (bmi < 25) bmiCategory = "Normal";
+    else if (bmi < 30) bmiCategory = "Overweight";
+    else bmiCategory = "Obese";
+
+    // -----------------------------
+    // 3️⃣ SHOW BMI TO USER
+    // -----------------------------
+    const bmiBox = document.getElementById("bmiResult");
+    bmiBox.style.display = "block";
+    bmiBox.innerHTML = `
+        <h3>📊 Health Summary</h3>
+        <p><b>BMI:</b> ${bmi}</p>
+        <p><b>Category:</b> ${bmiCategory}</p>
+    `;
 
     const resultBox = document.getElementById("result");
     resultBox.style.display = "block";
     resultBox.innerHTML = "<p>⏳ Generating AI recommendations...</p>";
 
     try {
-        console.log("📤 Sending to backend:", { age, gender, weight, goal });
+        // -----------------------------
+        // 4️⃣ SEND DATA TO BACKEND
+        // -----------------------------
+        console.log("📤 Sending to backend:", {
+            age,
+            gender,
+            height,
+            weight,
+            bmi,
+            bmiCategory,
+            goal
+        });
 
         const response = await fetch(
             "https://health-fitness-backend-1.onrender.com/recommend",
@@ -20,14 +58,24 @@ document.getElementById("fitnessForm").addEventListener("submit", async function
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ age, gender, weight, goal })
+                body: JSON.stringify({
+                    age,
+                    gender,
+                    height,
+                    weight,
+                    bmi,
+                    bmiCategory,
+                    goal
+                })
             }
         );
 
         const data = await response.json();
         console.log("📥 Response from backend:", data);
 
-        // ❌ Backend error
+        // -----------------------------
+        // 5️⃣ HANDLE BACKEND ERRORS
+        // -----------------------------
         if (!response.ok) {
             resultBox.innerHTML = `
                 <p style="color:red; font-weight:bold;">❌ API Error</p>
@@ -38,7 +86,9 @@ ${JSON.stringify(data, null, 2)}
             return;
         }
 
-        // ✅ SUPPORT BOTH POSSIBLE RESPONSE KEYS
+        // -----------------------------
+        // 6️⃣ HANDLE AI RESPONSE
+        // -----------------------------
         const aiText = data.result || data.response;
 
         if (!aiText) {
@@ -49,7 +99,9 @@ ${JSON.stringify(data, null, 2)}
             return;
         }
 
-        // ✨ Beautify AI text
+        // -----------------------------
+        // 7️⃣ FORMAT AI TEXT
+        // -----------------------------
         const formatted = aiText
             .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
             .replace(/[-•] /g, "👉 ")
