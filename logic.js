@@ -32,33 +32,48 @@ function updateBMIAndGoal() {
 
     let bmiCategory = "";
     let suggestedGoal = "";
+    let badgeClass = "";
 
     if (bmi < 18.5) {
         bmiCategory = "Underweight";
         suggestedGoal = "muscle gain";
+        badgeClass = "bmi-underweight";
     } else if (bmi < 25) {
         bmiCategory = "Normal";
         suggestedGoal = "maintain";
-    } else {
+        badgeClass = "bmi-normal";
+    } else if (bmi < 30) {
         bmiCategory = "Overweight";
         suggestedGoal = "fat loss";
+        badgeClass = "bmi-overweight";
+    } else {
+        bmiCategory = "Obese";
+        suggestedGoal = "fat loss";
+        badgeClass = "bmi-obese";
     }
 
-    // Show BMI info
+    // Show BMI info with badge
     bmiBox.style.display = "block";
-    bmiText.innerHTML = `📊 BMI: <b>${bmi}</b> (${bmiCategory})`;
-    bmiSuggestion.innerHTML = `💡 Based on your BMI, we recommend: <b>${
-        suggestedGoal === "fat loss"
-            ? "Lose Weight"
-            : suggestedGoal === "muscle gain"
-            ? "Gain Muscle"
-            : "Maintain Health"
-    }</b>`;
+    bmiText.innerHTML = `
+        📊 BMI: <b>${bmi}</b>
+        <span class="bmi-badge ${badgeClass}">
+            ${bmiCategory}
+        </span>
+    `;
 
-    // Auto-select goal (user can still override)
-    if (!goalSelect.value) {
-        goalSelect.value = suggestedGoal;
-    }
+    bmiSuggestion.innerHTML = `💡 Based on your BMI, we recommend:
+        <b>${
+            suggestedGoal === "fat loss"
+                ? "Lose Weight"
+                : suggestedGoal === "muscle gain"
+                ? "Gain Muscle"
+                : "Maintain Health"
+        }</b>`;
+
+    // Auto-select goal (user can override)
+    // if (!goalSelect.value) {
+    //     goalSelect.value = suggestedGoal;
+    // }
 }
 
 // Trigger BMI calculation while typing
